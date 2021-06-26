@@ -1,0 +1,63 @@
+
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          mysqld_exporter
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: starts mysqld_exporter
+# Description:       starts the mysqld_exporter Process Manager daemon
+### END INIT INFO
+prefix=/usr/local/mysqld_exporter
+exec_prefix=${prefix}
+mysqld_exporter_BIN=${exec_prefix}/mysqld_exporter
+mysqld_exporter_LOG=${exec_prefix}/mysqld_exporter.log
+mysqld_exporter_PID=${exec_prefix}/pid
+ 
+case "$1" in
+	start)
+		if [[ -f $mysqld_exporter_PID ]]
+			then
+			if [[ ! -z `cat $mysqld_exporter_PID` ]]
+				then
+				echo -n "mysqld_exporter is running"
+				exit 0
+			fi
+		fi
+		echo -e "Starting mysqld_exporter \n"
+		/usr/bin/nohup $mysqld_exporter_BIN --config.my-cnf="${exec_prefix}/my.cnf" --web.listen-address="0.0.0.0:9104"  >> $mysqld_exporter_LOG 2>&1 &
+		echo $! > $mysqld_exporter_PID
+	;;
+	stop)
+		if [[ ! -z `cat $mysqld_exporter_PID` ]]
+			then
+			echo -e "Stop mysqld_exporter \n"
+			cat $mysqld_exporter | xargs kill -9
+		else
+			echo -n "mysqld_exporter not running"
+		fi
+		echo > $mysqld_exporter_PID
+	;;
+	reload)
+		if [[ -f $mysqld_exporter_PID ]]
+			then
+			kill -1 `cat $mysqld_exporter_PID`
+		fi
+	;;
+	status)
+		if [[ -z `cat $mysqld_exporter_PID` ]]
+			then
+			echo "mysqld_exporter is stopped"
+		else
+		    echo "mysqld_exporter is running"
+		fi
+	;;
+	restart)
+		$0 stop
+		$0 start
+	;;
+	*)
+		echo "Usage: $0 {start|stop|reload|status|restart}"
+		exit 1
+	;;
+esac
+
