@@ -1,0 +1,63 @@
+
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          node_exporter
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: starts node_exporter
+# Description:       starts the node_exporter Process Manager daemon
+### END INIT INFO
+prefix=/usr/local/node_exporter
+exec_prefix=${prefix}
+node_exporter_BIN=${exec_prefix}/node_exporter
+node_exporter_LOG=${exec_prefix}/node_exporter.log
+node_exporter_PID=${exec_prefix}/pid
+ 
+case "$1" in
+	start)
+		if [[ -f $node_exporter_PID ]]
+			then
+			if [[ ! -z `cat $node_exporter_PID` ]]
+				then
+				echo -n "node_exporter is running"
+				exit 0
+			fi
+		fi
+		echo -e "Starting node_exporter \n"
+		/usr/bin/nohup $node_exporter_BIN  --web.listen-address="0.0.0.0:9100"  >> $node_exporter_LOG 2>&1 &
+		echo $! > $node_exporter_PID
+	;;
+	stop)
+		if [[ ! -z `cat $node_exporter_PID` ]]
+			then
+			echo -e "Stop node_exporter \n"
+			cat $node_exporter | xargs kill -9
+		else
+			echo -n "node_exporter not running"
+		fi
+		echo > $node_exporter_PID
+	;;
+	reload)
+		if [[ -f $node_exporter_PID ]]
+			then
+			kill -1 `cat $node_exporter_PID`
+		fi
+	;;
+	status)
+		if [[ -z `cat $node_exporter_PID` ]]
+			then
+			echo "node_exporter is stopped"
+		else
+		    echo "node_exporter is running"
+		fi
+	;;
+	restart)
+		$0 stop
+		$0 start
+	;;
+	*)
+		echo "Usage: $0 {start|stop|reload|status|restart}"
+		exit 1
+	;;
+esac
+
